@@ -17,6 +17,9 @@ jobs:
         working-directory: iac/admin
     
     permissions:
+      contents: read
+      metadata: read
+      packages: read
       pull-requests: write
 
     steps:
