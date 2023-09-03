@@ -1,6 +1,7 @@
 locals {
   org_iam_roles = [
     "roles/resourcemanager.projectCreator",
+    "roles/billing.viewer",
   ]
 
   admin_project_iam_roles = [
@@ -12,6 +13,8 @@ locals {
     "cloudkms.googleapis.com",
     "storage.googleapis.com",
     "secretmanager.googleapis.com",
+    "cloudresourcemanager.googleapis.com",
+    "cloudbilling.googleapis.com",
   ]
 
   mx_priorities         = [24, 13, 75]
