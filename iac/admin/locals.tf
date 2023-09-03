@@ -5,6 +5,7 @@ locals {
 
   admin_project_iam_roles = [
     "roles/cloudkms.admin",
+    "roles/storage.admin",
   ]
 
   admin_apis = [
