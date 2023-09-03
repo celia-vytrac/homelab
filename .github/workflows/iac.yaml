@@ -18,7 +18,6 @@ jobs:
     
     permissions:
       contents: read
-      metadata: read
       packages: read
       pull-requests: write
 
