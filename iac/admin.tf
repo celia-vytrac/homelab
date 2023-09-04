@@ -1,7 +1,13 @@
-resource "random_string" "random" {
-  count       = 3
-  length      = 6
-  min_numeric = 6
+locals {
+  admin_apis = [
+    "cloudkms.googleapis.com",
+    "storage.googleapis.com",
+    "secretmanager.googleapis.com",
+    "cloudresourcemanager.googleapis.com",
+    "cloudbilling.googleapis.com",
+    "serviceusage.googleapis.com",
+    "iam.googleapis.com",
+  ]
 }
 
 resource "google_project" "admin" {
@@ -16,22 +22,6 @@ resource "google_project_service" "admin_services" {
   for_each = toset(local.admin_apis)
   project  = google_project.admin.number
   service  = each.key
-}
-
-resource "google_project" "homelab_dev" {
-  name       = "Homelab Dev"
-  project_id = "homelab-dev-${random_string.random[1].result}"
-  org_id     = data.google_organization.vytrac_me.org_id
-
-  billing_account = data.google_billing_account.billing.id
-}
-
-resource "google_project" "homelab_prod" {
-  name       = "Homelab Prod"
-  project_id = "homelab-prod-${random_string.random[2].result}"
-  org_id     = data.google_organization.vytrac_me.org_id
-
-  billing_account = data.google_billing_account.billing.id
 }
 
 resource "google_kms_key_ring" "keyring" {
