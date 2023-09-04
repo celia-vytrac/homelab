@@ -4,7 +4,11 @@ on:
   push:
     branches:
     - main
+    paths:
+    - iac/**
   pull_request:
+    paths:
+    - iac/**
 
 jobs:
   terraform:
@@ -14,7 +18,7 @@ jobs:
     defaults:
       run:
         shell: bash
-        working-directory: iac/admin
+        working-directory: iac
     
     permissions:
       contents: read
@@ -93,7 +97,7 @@ jobs:
 
           </details>
 
-          *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`, Working Directory: \`iac/admin\`, Workflow: \`${{ github.workflow }}\`*`;
+          *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`, Working Directory: \`iac\`, Workflow: \`${{ github.workflow }}\`*`;
 
           // 3. If we have a comment, update it, otherwise create a new one
           if (botComment) {
