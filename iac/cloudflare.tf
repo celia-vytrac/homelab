@@ -4,7 +4,9 @@ locals {
   personal_email        = "celia.j.vytrac@gmail.com"
 
   # data comes in from secret manager as a list of string separate by newlines
-  gcloud_domain_verifications = [for line in split("\n", data.google_secret_manager_secret_version.gcloud_domain_verifications.secret_data) : chomp(line)]
+  gcloud_domain_verifications = [
+    for line in split("\n", data.google_secret_manager_secret_version.gcloud_domain_verifications.secret_data) : chomp(line)
+  ]
 }
 
 #
