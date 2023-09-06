@@ -7,6 +7,9 @@ locals {
   gcloud_domain_verifications = [
     for line in split("\n", data.google_secret_manager_secret_version.gcloud_domain_verifications.secret_data) : chomp(line)
   ]
+  github_domain_verifications = [
+    for line in split("\n", data.google_secret_manager_secret_version.github_domain_verifications.secret_data) : chomp(line)
+  ]
 }
 
 #
@@ -66,13 +69,28 @@ resource "cloudflare_record" "mail" {
 # local.gcloud_domain_verifications is sensitive=true
 #
 resource "cloudflare_record" "gcloud_verifications" {
-  count   = 2
+  count   = length(local.gcloud_domain_verifications)
   zone_id = data.cloudflare_zone.zone.id
   name    = data.cloudflare_zone.zone.name
   ttl     = 3600
   type    = "TXT"
 
   value = "google-site-verification=${local.gcloud_domain_verifications[count.index]}"
+}
+
+#
+# DNS Verifications for proving domain ownership
+# count is used here instead of for_each because
+# local.github_domain_verifications is sensitive=true
+#
+resource "cloudflare_record" "github_verifications" {
+  count   = length(local.github_domain_verifications)
+  zone_id = data.cloudflare_zone.zone.id
+  name    = "_github-pages-challenge-celia-vytrac.web.${data.cloudflare_zone.zone.name}"
+  ttl     = 3600
+  type    = "TXT"
+
+  value = local.github_domain_verifications[count.index]
 }
 
 #
@@ -134,4 +152,16 @@ resource "cloudflare_record" "notes" {
   type    = "CNAME"
 
   value = "publish-main.obsidian.md"
+}
+
+#
+# gh-pages website
+#
+resource "cloudflare_record" "gh_pages" {
+  zone_id = data.cloudflare_zone.zone.id
+  name    = "web"
+  proxied = true
+  type    = "CNAME"
+
+  value = "celia-vytrac.github.io"
 }
