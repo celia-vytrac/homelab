@@ -21,3 +21,8 @@ data "google_secret_manager_secret_version" "gcloud_domain_verifications" {
   project = google_project.admin.number
   secret  = "gcloud-domain-verifications"
 }
+
+data "google_secret_manager_secret_version" "github_domain_verifications" {
+  project = google_project.admin.number
+  secret  = "github-domain-verifications"
+}

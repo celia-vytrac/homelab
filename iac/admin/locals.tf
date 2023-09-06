@@ -32,4 +32,5 @@ locals {
 
   # data comes in from secret manager as a list of string separate by newlines
   gcloud_domain_verifications = [for line in split("\n", data.google_secret_manager_secret_version.gcloud_domain_verifications.secret_data) : chomp(line)]
+  github_domain_verifications = [for line in split("\n", data.google_secret_manager_secret_version.github_domain_verifications.secret_data) : chomp(line)]
 }
