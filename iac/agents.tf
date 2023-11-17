@@ -51,7 +51,7 @@ resource "google_compute_region_instance_template" "agents" {
   }
 
   service_account {
-    email = google_service_accounts.agents.email
+    email = google_service_account.agents.email
     scopes = [
       "https://www.googleapis.com/auth/cloud-platform",
     ]

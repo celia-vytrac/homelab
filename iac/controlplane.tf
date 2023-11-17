@@ -152,7 +152,7 @@ resource "google_compute_region_instance_template" "controlplane" {
   }
 
   service_account {
-    email = google_service_accounts.controlplane.email
+    email = google_service_account.controlplane.email
     scopes = [
       "https://www.googleapis.com/auth/cloud-platform",
     ]
