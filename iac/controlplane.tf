@@ -101,7 +101,7 @@ resource "google_compute_forwarding_rule" "api_server_internal" {
   region                = "us-central1"
   load_balancing_scheme = "INTERNAL"
   allow_global_access   = true
-  ip_address            = google_compute_address.api_server_internal.address
+  ip_address            = google_compute_address.controlplane_internal.address
   backend_service       = google_compute_region_backend_service.api_server_internal.id
   ports                 = [6443]
   subnetwork            = google_compute_subnetwork.controlplane.self_link
@@ -121,7 +121,7 @@ resource "google_compute_forwarding_rule" "api_server_external" {
   name                  = "api-server-external"
   region                = "us-central1"
   load_balancing_scheme = "EXTERNAL"
-  ip_address            = google_compute_address.api_server_external.address
+  ip_address            = google_compute_address.controlplane_external.address
   backend_service       = google_compute_region_backend_service.api_server_external.id
   port_range            = "6443-6443"
 }
