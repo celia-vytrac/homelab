@@ -34,7 +34,6 @@ resource "google_compute_region_instance_template" "agents" {
 
   tags = ["k8s"]
 
-  disk_encryption_key = google_kms_crypto_key.keys["talos-disk-key"].id
 
   // Create a new boot disk from an image
   disk {
@@ -42,7 +41,8 @@ resource "google_compute_region_instance_template" "agents" {
     auto_delete  = true
     boot         = true
     // backup the disk every day
-    resource_policies = [google_compute_resource_policy.daily.id]
+    resource_policies   = [google_compute_resource_policy.daily.id]
+    disk_encryption_key = google_kms_crypto_key.keys["talos-disk-key"].id
   }
 
   network_interface {
