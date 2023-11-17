@@ -56,7 +56,7 @@ resource "talos_machine_configuration_apply" "config" {
   ]
 }
 
-resource "talos_machine_bootstrap" "boostrap" {
+resource "talos_machine_bootstrap" "bootstrap" {
   for_each             = toset(local.node_ips)
   client_configuration = talos_machine_secrets.secrets.client_configuration
   node                 = each.value

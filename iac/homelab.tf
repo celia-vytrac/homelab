@@ -28,7 +28,7 @@ resource "google_compute_resource_policy" "daily" {
     schedule {
       daily_schedule {
         days_in_cycle = 1
-        start_time    = "04:17"
+        start_time    = "04:00"
       }
     }
   }
