@@ -6,15 +6,15 @@ terraform {
 
   required_providers {
     cloudflare = {
-      source = "cloudflare/cloudflare"
+      source  = "cloudflare/cloudflare"
       version = "4.19.0"
     }
     google = {
-      source = "hashicorp/google"
+      source  = "hashicorp/google"
       version = "5.6.0"
     }
     talos = {
-      source = "siderolabs/talos"
+      source  = "siderolabs/talos"
       version = "0.4.0-alpha.0"
     }
   }
