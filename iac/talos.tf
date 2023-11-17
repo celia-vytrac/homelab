@@ -1,6 +1,7 @@
 locals {
   talos_version = "v1.6.0-alpha.0"
   talos_image   = "https://github.com/siderolabs/talos/releases/download/${local.talos_version}/gcp-amd64.raw.tar.gz"
+  node_ips = ["172.16.1.0/24", "172.16.2.0/24"]
 }
 
 resource "google_compute_image" "talos" {

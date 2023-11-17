@@ -24,6 +24,16 @@ locals {
   ]
 }
 
+resource "google_service_account" "controlplane" {
+  account_id = "controlplane"
+  project    = split("/", google_project.homelab.id)[1]
+}
+
+resource "google_service_account" "agents" {
+  account_id = "cluster-agent"
+  project    = split("/", google_project.homelab.id)[1]
+}
+
 resource "google_service_account" "tf_sa" {
   account_id   = "gitops-iac"
   display_name = "Github actions service account"
@@ -58,7 +68,7 @@ resource "google_project_iam_binding" "tf_sa_binding" {
 }
 
 resource "google_kms_crypto_key_iam_binding" "tfstate_sa_binding" {
-  crypto_key_id = google_kms_crypto_key.tfstate_key.id
+  crypto_key_id = google_kms_crypto_key.keys["tfstate-key"].id
   role          = "roles/cloudkms.cryptoKeyEncrypterDecrypter"
 
   members = [
@@ -67,7 +77,7 @@ resource "google_kms_crypto_key_iam_binding" "tfstate_sa_binding" {
 }
 
 resource "google_kms_crypto_key_iam_binding" "secrets_sa_binding" {
-  crypto_key_id = google_kms_crypto_key.secrets_key.id
+  crypto_key_id = google_kms_crypto_key.keys["secrets-key"].id
   role          = "roles/cloudkms.cryptoKeyEncrypterDecrypter"
 
   members = [

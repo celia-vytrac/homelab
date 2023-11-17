@@ -8,6 +8,12 @@ locals {
     "serviceusage.googleapis.com",
     "iam.googleapis.com",
   ]
+
+  kms_keys = [
+    "tfstate-key",
+    "secrets-key",
+    "talos-disk-key",
+  ]
 }
 
 resource "google_project" "admin" {
@@ -30,18 +36,9 @@ resource "google_kms_key_ring" "keyring" {
   project  = split("/", google_project.admin.id)[1]
 }
 
-resource "google_kms_crypto_key" "tfstate_key" {
-  name            = "tfstate-key"
-  key_ring        = google_kms_key_ring.keyring.id
-  rotation_period = "2592000s" // 30 days
-
-  lifecycle {
-    prevent_destroy = true
-  }
-}
-
-resource "google_kms_crypto_key" "secrets_key" {
-  name            = "secrets-key"
+resource "google_kms_crypto_key" "keys" {
+  for_each        = toset(local.kms_keys)
+  name            = each.value
   key_ring        = google_kms_key_ring.keyring.id
   rotation_period = "2592000s" // 30 days
 
@@ -60,7 +57,7 @@ resource "google_storage_bucket" "gcs_bucket" {
   }
 
   encryption {
-    default_kms_key_name = google_kms_crypto_key.tfstate_key.id
+    default_kms_key_name = google_kms_crypto_key.keys["tfstate-key"].id
   }
 
   public_access_prevention = "enforced"

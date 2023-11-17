@@ -25,3 +25,9 @@ provider "google" {
   project = "admin-920455"
   region  = "us-central1"
 }
+
+provider "google" {
+  alias   = "homelab"
+  project = "homelab-735905"
+  region  = "us-central1"
+}
