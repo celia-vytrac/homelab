@@ -184,10 +184,5 @@ resource "google_compute_region_instance_group_manager" "controlplane" {
     port = 6443
   }
 
-  auto_healing_policies {
-    health_check      = google_compute_health_check.controlplane.id
-    initial_delay_sec = 300
-  }
-
   depends_on = [google_compute_router_nat.controlplane]
 }
