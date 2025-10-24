@@ -1,52 +1,89 @@
-#
-# Email
-#
-resource "cloudflare_email_routing_address" "email" {
-  account_id = local.cloudflare_account_id
-  email      = local.personal_email
-}
+locals {
+  zone_name = data.cloudflare_zone.zone.name
+  zone_id   = data.cloudflare_zone.zone.zone_id
 
-resource "cloudflare_email_routing_rule" "email" {
-  zone_id = data.cloudflare_zone.zone.id
-  name    = "celia"
-  enabled = true
+  # A records with identical config
+  a_records = toset([
+    local.zone_name,
+    "www.${local.zone_name}",
+  ])
 
-  matcher {
-    type  = "literal"
-    field = "to"
-    value = "celia@${data.cloudflare_zone.zone.name}"
+  # CNAMEs with identical config (all proxied)
+  cnames = {
+    "notes.${local.zone_name}" = "publish-main.obsidian.md"
+    "tilde.${local.zone_name}" = "tilde.club"
+    "web.${local.zone_name}"   = "celia-vytrac.github.io"
   }
 
-  action {
-    type  = "forward"
-    value = [local.personal_email]
+  dkims = {
+    "sig1._domainkey.${local.zone_name}" = "sig1.dkim.${local.zone_name}.at.icloudmailadmin.com"
   }
+
+  spf_includes = [
+    "icloud.com",
+  ]
+  spf_txt = trimspace(
+    <<-EOT
+      v=spf1 ${join(" ", [for s in local.spf_includes : "include:${s}"])} ~all
+    EOT
+  )
+
+  # data comes in from secret manager as a list of string separated by newlines
+  gcloud_domain_verifications = [
+    for line in split(
+      "\n",
+      data.google_secret_manager_secret_version.gcloud_domain_verifications.secret_data
+    )
+    : chomp(line)
+  ]
+  github_domain_verifications = [
+    for line in split(
+      "\n",
+      data.google_secret_manager_secret_version.github_domain_verifications.secret_data
+    )
+    : chomp(line)
+  ]
+  icloud_domain_verifications = [
+    for line in split(
+      "\n",
+      data.google_secret_manager_secret_version.icloud_domain_verifications.secret_data
+    )
+    : chomp(line)
+  ]
 }
 
-resource "cloudflare_record" "dmarc" {
-  zone_id = data.cloudflare_zone.zone.id
-  name    = "_dmarc"
+resource "cloudflare_dns_record" "dmarc" {
+  zone_id = local.zone_id
   type    = "TXT"
+  ttl     = 3600
 
-  value = "v=DMARC1;  p=none; rua=mailto:8d277764549d4f5a8fb5d920925f6691@dmarc-reports.cloudflare.net"
+  name = "_dmarc.${local.zone_name}"
+
+  content = "v=DMARC1; p=none; rua=mailto:dmarc@${local.zone_name}"
 }
 
-resource "cloudflare_record" "spf" {
-  zone_id = data.cloudflare_zone.zone.id
-  name    = data.cloudflare_zone.zone.name
+resource "cloudflare_dns_record" "spf" {
+  zone_id = local.zone_id
+  name    = local.zone_name
   type    = "TXT"
+  ttl     = 3600
 
-  value = "v=spf1 include:_spf.mx.cloudflare.net include:_spf.google.com ~all"
+  content = local.spf_txt
 }
 
-resource "cloudflare_record" "mail" {
-  for_each = { for i, priority in local.mx_priorities : i => priority }
-  zone_id  = data.cloudflare_zone.zone.id
-  name     = data.cloudflare_zone.zone.name
-  priority = each.value
+resource "cloudflare_dns_record" "mx_icloud" {
+  count = 2
+
+  zone_id  = local.zone_id
+  name     = local.zone_name
   type     = "MX"
+  priority = 10
+  ttl      = 3600
 
-  value = "route${each.key + 1}.mx.cloudflare.net"
+  content = format(
+    "mx%02d.mail.icloud.com",
+    count.index + 1
+  )
 }
 
 #
@@ -54,14 +91,14 @@ resource "cloudflare_record" "mail" {
 # count is used here instead of for_each because
 # local.gcloud_domain_verifications is sensitive=true
 #
-resource "cloudflare_record" "gcloud_verifications" {
+resource "cloudflare_dns_record" "gcloud_verifications" {
   count   = length(local.gcloud_domain_verifications)
-  zone_id = data.cloudflare_zone.zone.id
-  name    = data.cloudflare_zone.zone.name
+  zone_id = local.zone_id
+  name    = local.zone_name
   ttl     = 3600
   type    = "TXT"
 
-  value = "google-site-verification=${local.gcloud_domain_verifications[count.index]}"
+  content = "google-site-verification=${local.gcloud_domain_verifications[count.index]}"
 }
 
 #
@@ -69,85 +106,103 @@ resource "cloudflare_record" "gcloud_verifications" {
 # count is used here instead of for_each because
 # local.github_domain_verifications is sensitive=true
 #
-resource "cloudflare_record" "github_verifications" {
+resource "cloudflare_dns_record" "github_verifications" {
   count   = length(local.github_domain_verifications)
-  zone_id = data.cloudflare_zone.zone.id
-  name    = "_github-pages-challenge-celia-vytrac.web.${data.cloudflare_zone.zone.name}"
+  zone_id = local.zone_id
+  name    = "_github-pages-challenge-celia-vytrac.web.${local.zone_name}"
   ttl     = 3600
   type    = "TXT"
 
-  value = local.github_domain_verifications[count.index]
+  content = local.github_domain_verifications[count.index]
+}
+
+#
+# DNS Verifications for proving domain ownership
+# count is used here instead of for_each because
+# local.icloud_domain_verifications is sensitive=true
+#
+resource "cloudflare_dns_record" "icloud_verifications" {
+  count   = length(local.icloud_domain_verifications)
+  zone_id = local.zone_id
+  name    = local.zone_name
+  ttl     = 3600
+  type    = "TXT"
+
+  content = "apple-domain=${local.icloud_domain_verifications[count.index]}"
 }
 
 #
 # www redirect
 #
-resource "cloudflare_record" "www" {
-  zone_id = data.cloudflare_zone.zone.id
-  name    = "www"
-  proxied = true
-  type    = "A"
+resource "cloudflare_ruleset" "www" {
+  zone_id = local.zone_id
+  name    = "redirects"
+  kind    = "zone"
+  phase   = "http_request_dynamic_redirect"
 
-  value = "192.0.2.1"
-}
+  rules = [
+    {
+      enabled     = true
+      description = "Redirect www"
+      expression = format(
+        "(http.host eq \"www.%s\")",
+        local.zone_name
+      )
+      action = "redirect"
 
-resource "cloudflare_page_rule" "www" {
-  zone_id  = data.cloudflare_zone.zone.id
-  target   = "www.${data.cloudflare_zone.zone.name}/*"
-  priority = 1
-
-  actions {
-    forwarding_url {
-      url         = "https://${data.cloudflare_zone.zone.name}/$1"
-      status_code = 302
+      action_parameters = {
+        from_value = {
+          status_code           = 302
+          preserve_query_string = true
+          target_url = {
+            expression = format(
+              "concat(\"https://%s\", http.request.uri.path)",
+              local.zone_name
+            )
+          }
+        }
+      }
     }
-  }
+  ]
 }
 
 #
-# root self resolve
+# A Records
 #
-resource "cloudflare_record" "root" {
-  zone_id = data.cloudflare_zone.zone.id
-  name    = data.cloudflare_zone.zone.name
-  proxied = true
+resource "cloudflare_dns_record" "a_records" {
+  for_each = local.a_records
+
+  zone_id = local.zone_id
+  name    = each.value
   type    = "A"
-
-  value = "192.0.2.1"
+  content = "192.0.2.1"
+  proxied = true
+  ttl     = 1
 }
 
 #
-# tilde.club redirect
+# CNAMEs
 #
-resource "cloudflare_record" "tilde" {
-  zone_id = data.cloudflare_zone.zone.id
-  name    = "tilde"
-  proxied = true
-  type    = "CNAME"
+resource "cloudflare_dns_record" "cnames" {
+  for_each = local.cnames
 
-  value = "tilde.club"
+  zone_id = local.zone_id
+  name    = each.key
+  type    = "CNAME"
+  content = each.value
+  proxied = true
+  ttl     = 1
 }
 
 #
-# obsidian publish
+# DKIMs
 #
-resource "cloudflare_record" "notes" {
-  zone_id = data.cloudflare_zone.zone.id
-  name    = "notes"
-  proxied = true
+resource "cloudflare_dns_record" "dkims" {
+  for_each = local.dkims
+
+  zone_id = local.zone_id
+  name    = each.key
   type    = "CNAME"
-
-  value = "publish-main.obsidian.md"
-}
-
-#
-# gh-pages website
-#
-resource "cloudflare_record" "gh_pages" {
-  zone_id = data.cloudflare_zone.zone.id
-  name    = "web"
-  proxied = true
-  type    = "CNAME"
-
-  value = "celia-vytrac.github.io"
+  content = each.value
+  ttl     = 3600
 }

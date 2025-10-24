@@ -7,19 +7,23 @@ data "google_organization" "vytrac_me" {
   domain = "vytrac.me"
 }
 
-data "cloudflare_account" "account" {
-  filter = {
-    name = "Vytrac Homelab"
+# homelab/remote_state.tf
+data "terraform_remote_state" "admin" {
+  backend = "gcs"
+  config = {
+    bucket = "tfstate-admin-bucket"
+    prefix = "envs/prod/admin"
   }
 }
 
+locals {
+  cf_zone_id       = data.terraform_remote_state.admin.outputs.cf_zone_id
+  subnet_self_link = data.terraform_remote_state.admin.outputs.subnet_self_link
+}
+
 data "cloudflare_zone" "zone" {
-  filter = {
-    name = "vytrac.me"
-    account = {
-      id = data.cloudflare_account.account.id
-    }
-  }
+  account_id = local.cloudflare_account_id
+  name       = "vytrac.me"
 }
 
 data "google_secret_manager_secret_version" "cloudflare_api_token" {
@@ -35,9 +39,4 @@ data "google_secret_manager_secret_version" "gcloud_domain_verifications" {
 data "google_secret_manager_secret_version" "github_domain_verifications" {
   project = google_project.admin.number
   secret  = "github-domain-verifications"
-}
-
-data "google_secret_manager_secret_version" "icloud_domain_verifications" {
-  project = google_project.admin.number
-  secret  = "icloud-domain-verifications"
 }

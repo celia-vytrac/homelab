@@ -1,25 +1,21 @@
 terraform {
   backend "gcs" {
     bucket = "tfstate.vytrac.me"
-    prefix = "terraform/state/admin"
+    prefix = "terraform/state/admin-920455"
   }
 
   required_providers {
     cloudflare = {
       source  = "cloudflare/cloudflare"
-      version = "~> 5.0"
+      version = "4.19.0"
     }
     google = {
       source  = "hashicorp/google"
-      version = "~> 7.0"
+      version = "5.6.0"
     }
     talos = {
       source  = "siderolabs/talos"
-      version = "~> 0.9"
-    }
-    random = {
-      source  = "hashicorp/random"
-      version = "~> 3.0"
+      version = "0.4.0-alpha.0"
     }
   }
 }
@@ -29,10 +25,17 @@ provider "cloudflare" {
 }
 
 provider "google-beta" {
-  region = "us-central1"
+  project = "admin-920455"
+  region  = "us-central1"
 }
 
 provider "google" {
-  region                      = "us-central1"
-  impersonate_service_account = "srv-tf-admin-infra-a@admin-705425.iam.gserviceaccount.com"
+  project = "admin-920455"
+  region  = "us-central1"
+}
+
+provider "google" {
+  alias   = "homelab"
+  project = "homelab-735905"
+  region  = "us-central1"
 }
